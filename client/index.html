@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>犬スタックバトル</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- マッチング画面 -->
+  <div id="screen-match" class="screen active">
+    <h1>🐕 犬スタックバトル</h1>
+    <p class="subtitle">犬を積んで相手を落とせ！</p>
+    <button id="btn-match" class="btn-primary">対戦開始</button>
+    <p id="match-status" class="status-text"></p>
+  </div>
+
+  <!-- ゲーム画面 -->
+  <div id="screen-game" class="screen">
+    <div id="game-header">
+      <div id="turn-indicator">ターン待機中...</div>
+      <div id="next-dog-panel">
+        <span>次の犬:</span>
+        <span id="next-dog-name"></span>
+        <canvas id="next-dog-preview" width="60" height="60"></canvas>
+      </div>
+    </div>
+    <div id="game-area">
+      <canvas id="game-canvas"></canvas>
+      <div id="drop-hint">← クリックして犬を落とす →</div>
+    </div>
+  </div>
+
+  <!-- 結果画面 -->
+  <div id="screen-result" class="screen">
+    <div id="result-content">
+      <h2 id="result-title"></h2>
+      <p id="result-message"></p>
+      <button id="btn-rematch" class="btn-primary">もう一度</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <script src="dogs.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

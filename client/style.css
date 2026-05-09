@@ -1,0 +1,177 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+  background: #fdf6e3;
+  color: #333;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.screen {
+  display: none;
+  width: 100%;
+  max-width: 640px;
+  padding: 20px;
+}
+
+.screen.active {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* マッチング画面 */
+#screen-match h1 {
+  font-size: 2.4rem;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: #888;
+  margin-bottom: 32px;
+}
+
+.btn-primary {
+  background: #e07b39;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 48px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.btn-primary:hover {
+  background: #c9662a;
+  transform: translateY(-2px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.status-text {
+  margin-top: 20px;
+  font-size: 0.95rem;
+  color: #666;
+  min-height: 24px;
+}
+
+/* ゲーム画面 */
+#screen-game {
+  flex-direction: column;
+  align-items: center;
+}
+
+#game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 600px;
+  padding: 8px 12px;
+  background: #fff;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+#turn-indicator {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #444;
+}
+
+#turn-indicator.my-turn {
+  color: #e07b39;
+}
+
+#turn-indicator.opponent-turn {
+  color: #6b8cba;
+}
+
+#next-dog-panel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+#next-dog-name {
+  font-weight: bold;
+  color: #333;
+}
+
+#next-dog-preview {
+  border-radius: 6px;
+  background: #f5f0e8;
+}
+
+#game-area {
+  position: relative;
+}
+
+#game-canvas {
+  display: block;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  cursor: crosshair;
+  background: #f0ebe0;
+}
+
+#drop-hint {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #aaa;
+  margin-top: 8px;
+}
+
+/* 結果画面 */
+#screen-result {
+  text-align: center;
+}
+
+#result-content {
+  background: #fff;
+  border-radius: 16px;
+  padding: 48px 40px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+#result-title {
+  font-size: 2.8rem;
+  margin-bottom: 16px;
+}
+
+#result-message {
+  font-size: 1rem;
+  color: #888;
+  margin-bottom: 32px;
+}
+
+/* アニメーション */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px) rotate(-1deg); }
+  75% { transform: translateX(2px) rotate(1deg); }
+}
+
+@keyframes bounce-in {
+  0% { transform: scale(0.5); opacity: 0; }
+  70% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+#screen-result.active #result-content {
+  animation: bounce-in 0.4s ease;
+}
