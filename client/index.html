@@ -13,10 +13,18 @@
     <p class="subtitle">犬を積んで相手を落とせ！</p>
     <button id="btn-match" class="btn-primary">対戦開始</button>
     <p id="match-status" class="status-text"></p>
+    <button id="btn-practice" class="btn-secondary hidden">練習モードで遊ぶ</button>
   </div>
 
   <!-- ゲーム画面 -->
   <div id="screen-game" class="screen">
+    <!-- 練習モード時のバナー -->
+    <div id="practice-banner" class="hidden">
+      <span class="practice-label">🔍 練習モード</span>
+      <span id="practice-score-display">0匹積み中</span>
+      <span class="practice-waiting">相手を探しています...</span>
+    </div>
+
     <div id="game-header">
       <div id="turn-indicator">ターン待機中...</div>
       <div id="next-dog-panel">
@@ -25,8 +33,17 @@
         <canvas id="next-dog-preview" width="60" height="60"></canvas>
       </div>
     </div>
+
     <div id="game-area">
       <canvas id="game-canvas"></canvas>
+      <!-- 練習モード：犬が落ちた時のオーバーレイ -->
+      <div id="practice-fell" class="hidden">
+        <div class="fell-box">
+          <div class="fell-emoji">💥</div>
+          <div class="fell-score" id="practice-fell-text"></div>
+          <div class="fell-restart">もう一度チャレンジ中...</div>
+        </div>
+      </div>
       <div id="drop-hint">← クリックして犬を落とす →</div>
     </div>
   </div>
@@ -40,6 +57,8 @@
     </div>
   </div>
 
+  <!-- 練習モードはクライアントサイドでMatter.jsを使用 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
   <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
   <script src="dogs.js"></script>
   <script src="game.js"></script>

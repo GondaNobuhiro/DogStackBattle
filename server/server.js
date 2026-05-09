@@ -23,44 +23,49 @@ const PHYSICS_DELTA = 1000 / 60;
 
 const DOG_TYPES = ['chihuahua', 'golden', 'shiba', 'pomeranian'];
 
-// 物理ボディ定義（コンパウンドボディ用）
-// 位置は重心≈(0,0)になるよう計算済み
-// chihuahua: 胴体円(r=12, -8,3) + 頭円(r=13, 8,-3) → 重心≈(0,0)
-// golden:    胴体矩形(50x22, -12,3) + 頭円(r=14, 18,-5) → 重心≈(-1.2,0)
-// shiba:     胴体矩形(38x22, -10,3) + 頭円(r=13, 17,-5) → 重心≈(0,0)
-// pomeranian:胴体円(r=18, -6,3) + 頭円(r=13, 12,-6) → 重心≈(0,0)
+// コンパウンドボディ定義（画像の実際の形状に合わせて設計）
+// 重心がほぼ(0,0)になるよう部品位置を計算済み
+//
+// チワワ:  正面向き座り(328x334≈正方形) → 縦長の2円コンパウンド
+// ゴールデン: 横長伏せ(537x412) → 横長矩形＋頭円
+// 柴犬: 横長伏せ(439x302) → 横長矩形＋頭円
+// ポメラニアン: 丸い座り(334x265) → 大円＋小円
 const DOG_CONFIGS = {
   chihuahua: {
     density: 0.003,
     parts: [
-      { type: 'circle', x: -8, y: 3, r: 12 },
-      { type: 'circle', x: 8,  y: -3, r: 13 },
+      { type: 'circle', x: -2, y: 6,  r: 16 }, // 胴体（下）
+      { type: 'circle', x:  2, y: -8, r: 14 }, // 頭（上）
     ],
-    behavior: { type: 'shake', duration: 1800, interval: 80, force: 0.003 },
+    // 常時ブルブル震え → 置いた後も継続
+    behavior: { type: 'shake', interval: 80, force: 0.0045 },
   },
   golden: {
     density: 0.004,
     parts: [
-      { type: 'rect',   x: -12, y: 3,  w: 50, h: 22 },
-      { type: 'circle', x: 18,  y: -5, r: 14 },
+      { type: 'rect',   x: -15, y: 5, w: 56, h: 22 }, // 横長胴体
+      { type: 'circle', x:  22, y: -8, r: 16 },         // 頭
     ],
-    behavior: { type: 'tailwag', duration: 2200, interval: 120, force: 0.006 },
+    // 常時尻尾振り → 左右に周期的な力
+    behavior: { type: 'tailwag', interval: 120, force: 0.009 },
   },
   shiba: {
     density: 0.0035,
     parts: [
-      { type: 'rect',   x: -10, y: 3,  w: 38, h: 22 },
-      { type: 'circle', x: 17,  y: -5, r: 13 },
+      { type: 'rect',   x: -12, y: 4, w: 46, h: 20 }, // 横長胴体
+      { type: 'circle', x:  18, y: -7, r: 14 },         // 頭
     ],
-    behavior: { type: 'spin', duration: 1000, torque: 0.12 },
+    // 3.5秒ごとに突然スピン
+    behavior: { type: 'spin', torque: 0.20, spinInterval: 3500, spinDuration: 650 },
   },
   pomeranian: {
     density: 0.003,
     parts: [
-      { type: 'circle', x: -6, y: 3,  r: 18 },
-      { type: 'circle', x: 12, y: -6, r: 13 },
+      { type: 'circle', x: -7, y: 4,  r: 18 }, // もこもこ胴体
+      { type: 'circle', x: 13, y: -8, r: 13 }, // 頭
     ],
-    behavior: { type: 'puff', duration: 1500, puffScale: 1.45 },
+    // 2.5秒ごとに膨張して周囲を押し出す
+    behavior: { type: 'puff', puffScale: 1.55, puffInterval: 2500 },
   },
 };
 
@@ -74,16 +79,15 @@ function randomDog() {
 
 function createDogBody(dogType, spawnX) {
   const cfg = DOG_CONFIGS[dogType];
-  const partOpts = { restitution: 0.15 };
   const parts = cfg.parts.map(p =>
     p.type === 'circle'
-      ? Bodies.circle(p.x, p.y, p.r, partOpts)
-      : Bodies.rectangle(p.x, p.y, p.w, p.h, partOpts)
+      ? Bodies.circle(p.x, p.y, p.r, { restitution: 0.15 })
+      : Bodies.rectangle(p.x, p.y, p.w, p.h, { restitution: 0.15 })
   );
   const compound = Body.create({
     label: dogType,
     density: cfg.density,
-    friction: 0.6,
+    friction: 0.65,
     frictionAir: 0.01,
     restitution: 0.15,
     parts,
@@ -105,58 +109,95 @@ function createRoomPhysics() {
   return { engine, world, dogBodies: [] };
 }
 
+// 行動を適用（永続動作）
 function applyBehavior(roomId, info) {
   const beh = DOG_CONFIGS[info.type].behavior;
   const body = info.body;
-  const startTime = Date.now();
+  info.behaviorPhase = 0;
+  info.spinActive = false;
 
   if (beh.type === 'shake') {
+    // チワワ: ブルブル震え（無限ループ）
     const iv = setInterval(() => {
-      if (!rooms[roomId] || Date.now() - startTime > beh.duration) { clearInterval(iv); return; }
+      if (!rooms[roomId]) { clearInterval(iv); return; }
       Body.applyForce(body, body.position, {
         x: (Math.random() - 0.5) * beh.force,
-        y: (Math.random() - 0.5) * beh.force * 0.3,
+        y: (Math.random() - 0.5) * beh.force * 0.2,
       });
+      info.behaviorPhase++;
     }, beh.interval);
+    info.behaviorInterval = iv;
 
   } else if (beh.type === 'tailwag') {
+    // ゴールデン: 尻尾を振り続ける（無限ループ）
     let phase = 0;
     const iv = setInterval(() => {
-      if (!rooms[roomId] || Date.now() - startTime > beh.duration) { clearInterval(iv); return; }
-      Body.applyForce(body, body.position, { x: Math.sin(++phase * 0.8) * beh.force, y: 0 });
+      if (!rooms[roomId]) { clearInterval(iv); return; }
+      phase++;
+      Body.applyForce(body, body.position, {
+        x: Math.sin(phase * 0.7) * beh.force,
+        y: 0,
+      });
+      info.behaviorPhase = phase;
     }, beh.interval);
+    info.behaviorInterval = iv;
 
   } else if (beh.type === 'spin') {
-    Body.setAngularVelocity(body, beh.torque);
-    setTimeout(() => { Body.setAngularVelocity(body, 0); }, beh.duration);
+    // 柴犬: 一定間隔でスピン
+    const doSpin = () => {
+      if (!rooms[roomId]) return;
+      info.spinActive = true;
+      Body.setAngularVelocity(body, beh.torque);
+      setTimeout(() => {
+        if (!rooms[roomId]) return;
+        Body.setAngularVelocity(body, 0);
+        info.spinActive = false;
+      }, beh.spinDuration);
+    };
+    doSpin(); // 即座に最初のスピン
+    const iv = setInterval(() => {
+      if (!rooms[roomId]) { clearInterval(iv); return; }
+      doSpin();
+    }, beh.spinInterval);
+    info.behaviorInterval = iv;
 
   } else if (beh.type === 'puff') {
-    let expanding = true;
-    info.puffRatio = 1;
-    const iv = setInterval(() => {
-      if (!rooms[roomId] || Date.now() - startTime > beh.duration) {
-        clearInterval(iv); info.puffRatio = 1; return;
-      }
-      const room = rooms[roomId];
-      if (expanding) {
-        info.puffRatio = Math.min(beh.puffScale, info.puffRatio + 0.08);
-        if (info.puffRatio >= beh.puffScale) expanding = false;
-        for (const other of room.dogBodies) {
-          if (other === info) continue;
-          const dx = other.body.position.x - body.position.x;
-          const dy = other.body.position.y - body.position.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          const range = DOG_CONFIGS[info.type].parts[0].r * beh.puffScale * 2.2;
-          if (dist < range && dist > 1) {
-            const f = 0.008 / dist;
-            Body.applyForce(other.body, other.body.position, { x: (dx / dist) * f, y: (dy / dist) * f });
+    // ポメラニアン: 膨張→収縮を繰り返す
+    const doPuff = () => {
+      if (!rooms[roomId]) return;
+      let expanding = true;
+      info.puffRatio = 1;
+      const puffIv = setInterval(() => {
+        if (!rooms[roomId]) { clearInterval(puffIv); return; }
+        if (expanding) {
+          info.puffRatio = Math.min(beh.puffScale, info.puffRatio + 0.12);
+          if (info.puffRatio >= beh.puffScale) expanding = false;
+          // 周囲の犬を押し出す
+          const room = rooms[roomId];
+          for (const other of room.dogBodies) {
+            if (other === info) continue;
+            const dx = other.body.position.x - body.position.x;
+            const dy = other.body.position.y - body.position.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 58 && dist > 1) {
+              const f = 0.015 / dist;
+              Body.applyForce(other.body, other.body.position, {
+                x: (dx / dist) * f, y: (dy / dist) * f,
+              });
+            }
           }
+        } else {
+          info.puffRatio = Math.max(1, info.puffRatio - 0.12);
+          if (info.puffRatio <= 1) { clearInterval(puffIv); info.puffRatio = 1; }
         }
-      } else {
-        info.puffRatio = Math.max(1, info.puffRatio - 0.08);
-        if (info.puffRatio <= 1) expanding = true;
-      }
-    }, 30);
+      }, 30);
+    };
+    doPuff();
+    const iv = setInterval(() => {
+      if (!rooms[roomId]) { clearInterval(iv); return; }
+      doPuff();
+    }, beh.puffInterval);
+    info.behaviorInterval = iv;
   }
 }
 
@@ -166,23 +207,39 @@ function addDogToRoom(roomId, x, dogType) {
 
   const body = createDogBody(dogType, x);
   World.add(room.world, body);
-  const info = { id: ++dogIdCounter, body, type: dogType, puffRatio: 1 };
+  const info = {
+    id: ++dogIdCounter, body, type: dogType,
+    puffRatio: 1, behaviorPhase: 0, spinActive: false,
+    behaviorInterval: null,
+  };
   room.dogBodies.push(info);
 
+  // 着地後（600ms）に行動開始
   setTimeout(() => {
     if (!rooms[roomId]) return;
     applyBehavior(roomId, info);
-    room.checkingFall = true;
-    const maxDur = Math.max(DOG_CONFIGS[dogType].behavior.duration || 1000, 2000) + 1500;
-    setTimeout(() => { if (rooms[roomId]) rooms[roomId].checkingFall = false; }, maxDur);
   }, 600);
+
+  // 最初の犬が着地してから落下チェックを有効化（1回だけ）
+  if (!room.checkingFall) {
+    setTimeout(() => {
+      if (rooms[roomId]) rooms[roomId].checkingFall = true;
+    }, 1500);
+  }
+}
+
+function clearRoomResources(room) {
+  clearInterval(room.physicsInterval);
+  clearInterval(room.broadcastInterval);
+  for (const info of room.dogBodies) {
+    if (info.behaviorInterval) clearInterval(info.behaviorInterval);
+  }
 }
 
 function handleGameOver(roomId) {
   const room = rooms[roomId];
   if (!room) return;
-  clearInterval(room.physicsInterval);
-  clearInterval(room.broadcastInterval);
+  clearRoomResources(room);
   const loserIndex = (room.currentTurn + 1) % 2;
   io.to(roomId).emit('game_over', {
     loserId: room.players[loserIndex],
@@ -208,6 +265,7 @@ function startRoomLoop(roomId) {
     }
   }, PHYSICS_DELTA);
 
+  // 20fps で座標・行動状態を配信
   room.broadcastInterval = setInterval(() => {
     if (!rooms[roomId]) { clearInterval(room.broadcastInterval); return; }
     io.to(roomId).emit('physics_update', {
@@ -218,6 +276,8 @@ function startRoomLoop(roomId) {
         y: info.body.position.y,
         angle: info.body.angle,
         puffRatio: info.puffRatio,
+        behaviorPhase: info.behaviorPhase || 0,
+        spinActive: info.spinActive || false,
       })),
     });
   }, 50);
@@ -283,8 +343,7 @@ io.on('connection', (socket) => {
     if (waitingSocket && waitingSocket.id === socket.id) waitingSocket = null;
     for (const [roomId, room] of Object.entries(rooms)) {
       if (room.players.includes(socket.id)) {
-        clearInterval(room.physicsInterval);
-        clearInterval(room.broadcastInterval);
+        clearRoomResources(room);
         socket.to(roomId).emit('opponent_disconnected');
         delete rooms[roomId];
         break;

@@ -66,6 +66,101 @@ body {
   min-height: 24px;
 }
 
+.btn-secondary {
+  margin-top: 16px;
+  background: transparent;
+  color: #e07b39;
+  border: 2px solid #e07b39;
+  border-radius: 12px;
+  padding: 10px 32px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn-secondary:hover {
+  background: #e07b39;
+  color: white;
+}
+
+.hidden { display: none !important; }
+
+/* 練習モードバナー */
+#practice-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 600px;
+  background: linear-gradient(90deg, #fff8f0, #fff3e0);
+  border: 1.5px solid #f0c070;
+  border-radius: 10px;
+  padding: 7px 14px;
+  margin-bottom: 8px;
+  font-size: 0.88rem;
+}
+
+.practice-label {
+  font-weight: bold;
+  color: #e07b39;
+}
+
+#practice-score-display {
+  font-weight: bold;
+  color: #333;
+  background: #ffe0b0;
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+
+.practice-waiting {
+  color: #999;
+  margin-left: auto;
+  font-size: 0.82rem;
+}
+
+#turn-indicator.practice-turn {
+  color: #b07820;
+}
+
+/* 練習モード：落下オーバーレイ */
+#practice-fell {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.45);
+  border-radius: 12px;
+  z-index: 10;
+}
+
+.fell-box {
+  background: white;
+  border-radius: 16px;
+  padding: 28px 40px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  animation: bounce-in 0.3s ease;
+}
+
+.fell-emoji {
+  font-size: 2.8rem;
+  margin-bottom: 8px;
+}
+
+.fell-score {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #e07b39;
+  margin-bottom: 6px;
+}
+
+.fell-restart {
+  font-size: 0.85rem;
+  color: #aaa;
+}
+
 /* ゲーム画面 */
 #screen-game {
   flex-direction: column;
